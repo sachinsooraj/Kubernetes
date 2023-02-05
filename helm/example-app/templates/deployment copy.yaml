@@ -1,0 +1,47 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-deployment
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: {{ .Values.name }}-deployment
+    app: {{ .Values.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - arm64
+              - key: service
+                operator: In
+                values:
+                - {{ .Values.value }}
+      tolerations:
+      - key: "service"
+        operator: "Equal"
+        value: {{ .Values.value }}
+        effect: "NoSchedule"
+      containers:
+      - name: {{ .Values.name }}
+        image: {{ .Values.deployment.image}}:{{ .Values.deployment.tag }}
+        ports:
+        - name: http
+          containerPort: 3000
+        imagePullPolicy: IfNotPresent
+      nodeSelector:
+        kubernetes.io/os: linux
